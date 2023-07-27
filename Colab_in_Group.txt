@@ -1,0 +1,22 @@
+#Import modules
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from google.colab import auth
+from oauth2client.client import GoogleCredentials
+
+#Authenticate and create the PyDrive client
+auth.authenticate_user()
+gauth = GoogleAuth()
+gauth.credentials = GoogleCredentials.get_application_default()
+drive = GoogleDrive(gauth)
+
+#Get the Shareable link
+#Ex link : https://drive.google.com/file/d/1S7GeYXE6NhbFZk4LCGa2IH4RANoB_WT4/view?usp=drive_link
+# Get the id from the link 1S7GeYXE6NhbFZk4LCGa2IH4RANoB_WT4
+downloaded = drive.CreateFile({'id':"1S7GeYXE6NhbFZk4LCGa2IH4RANoB_WT4"})   
+downloaded.GetContentFile('pintxos.csv')       
+
+#Read data
+import pandas as pd
+df = pd.read_csv("pintxos.csv")
+df.head()
