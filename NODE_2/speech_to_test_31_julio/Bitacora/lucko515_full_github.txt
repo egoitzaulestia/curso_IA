@@ -1,0 +1,171 @@
+https://github.com/lucko515/speech-recognition-neural-network/blob/master/vui_notebook.ipynb
+
+vui_notebook.ipynb : Notebook completo. Autoexplicado.
+README.md : Instrucciones de configuración.{Duda :Python 3.5? o Python3.6? }
+requirements.txt : archivo con las librerias y versiones utilizadas.
+flac_to_wav.sh : Shell script para convetir .flac ?? en .flac_to_wav
+report.html : fichero htlm de presentación de los resultados.
+
+
+Archivos destacados:
+smaple_models.py : Genera 7 tipos de redes neuronales. (KERAS)
+
+
+
+
+Otras informaciones : (son suposiciones)
+- Guarda el LibriSpeech dataset en la carpeta 'LibriSpeech'
+- Mantiene la estructura de archivos original de 'LibriSpeech'
+
+LibriSpeech /
+            / dev-clean
+            / test-clean
+
+
+Crear los JSON files para train y validation datsets
+    data_directory/group/speaker/[file_id1.wav, file_id2.wav, ...,speaker.trans.txt]
+    Where speaker.trans.txt has in each line, file_id transcription
+    def main (data_directory, output_file)
+
+
+IMPORTANTE :
+A ver si entiendo la relación entre las 'transcripciones' del dataset y los 'labels' {letras A,B,C...}
+de los outputs de salida de la red nueronal :
+Suposición : Para poder calcular el 'error' (LOSS) debe de pasar el texto de la 'transcripción'
+a 'letras sueltas' y comparandolas con las 'letras de los labels' poder determinar en cuanto se 
+ha equivocado, para volver a hacer el proceso.
+
+
+data_generator.py 
+"""
+Defines a class that is used to featurize audio clips, and provide
+them to the network for training or testing. El nombre de la clase es AudioGenerator
+"""
+class AudioGenerator():
+
+from utils import calc_feat_dim, spectrogram_from_file, text_to_int_sequence
+# la función 'text_to_int_sequence' tiene que estar realcionada
+
+
+# esta dentro del metodo 'get_batch'
+def get_batch(self, partition):
+        """ Obtain a batch of train, validation, or test data 
+        en función de la variable partition
+        """
+
+    # el metodo 'get_batch' devuelve (inputs, outputs)
+    # inputs parece un diccionario con las claves:
+            'the_input': valores de X 
+            'the_labels' : 'transcripcion del audio caracter a caracter'
+
+    # return the arrays
+        outputs = {'ctc': np.zeros([self.minibatch_size])}
+        inputs = {'the_input': X_data, 
+                  'the_labels': labels, 
+                  'input_length': input_length, 
+                  'label_length': label_length 
+                 }
+        return (inputs, outputs)
+
+    # dentro de este metodo (en la linea 95 ) hace lo siguente
+    # calculate labels & label_length
+            label = np.array(text_to_int_sequence(texts[cur_index+i])) 
+            labels[i, :len(label)] = label
+            label_length[i] = len(label)
+    # mete en 'label' un ndarray resultante de aplicar 'text_to_int_sequence' a 'texts'
+    texts = self.train_texts
+
+¿DONDE SE USA LA CLASE 'AudioGenerator'?
+Se usa en el STEP3 de jupyter_notebook denro de la funcion 
+
+def get_predictions(index, partition, input_to_softmax, model_path):
+    """ Print a model's decoded predictions
+    Params:
+        index (int): The example you would like to visualize
+        partition (str): One of 'train' or 'validation'
+        input_to_softmax (Model): The acoustic model
+        model_path (str): Path to saved acoustic model's weights
+    """
+    # load the train and test data
+    data_gen = AudioGenerator(spectrogram=False)
+    data_gen.load_train_data()
+    data_gen.load_validation_data()
+
+    Una vez instanciado data_gen se utiliza hasta nuev veces con varios métodos.
+
+¿VAMOS AL ARCHIVO 'utils.py' para ver las funcion 'text_to_int_sequence'
+
+utils.py
+"""
+Defines various functions for processing the data.
+"""
+from char_map import char_map, index_map
+
+
+def text_to_int_sequence(text):
+    """ Convert text to an integer sequence """
+    int_sequence = []
+    for c in text:
+        if c == ' ':
+            ch = char_map['<SPACE>']
+        else:
+            ch = char_map[c]
+        int_sequence.append(ch)
+    return int_sequence
+
+def int_sequence_to_text(int_sequence):
+    """ Convert an integer sequence to text """
+    text = []
+    for c in int_sequence:
+        ch = index_map[c]
+        text.append(ch)
+    return text
+
+
+char_map.py
+"""
+Defines two dictionaries for converting 
+between text and integer sequences.
+"""
+
+char_map_str = """
+' 0
+<SPACE> 1
+a 2
+b 3
+c 4
+d 5
+e 6
+f 7
+g 8
+h 9
+i 10
+j 11
+k 12
+l 13
+m 14
+n 15
+o 16
+p 17
+q 18
+r 19
+s 20
+t 21
+u 22
+v 23
+w 24
+x 25
+y 26
+z 27
+"""
+# the "blank" character is mapped to 28
+
+char_map = {}
+index_map = {}
+for line in char_map_str.strip().split('\n'):
+    ch, index = line.split()
+    char_map[ch] = int(index)
+    index_map[int(index)+1] = ch
+index_map[2] = ' '
+
+¿DONDE USO LA CLAVE DEL DICCIONARIO 'the_labels'? 
